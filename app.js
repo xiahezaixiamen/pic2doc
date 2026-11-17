@@ -288,8 +288,12 @@ async function exportPdf() {
       pdf.addImage(dataUrl, 'JPEG', x, y, w, h, undefined, 'FAST');
     }
 
-    pdf.save(`图片转文档-${todayTag()}.pdf`);
-    toast('PDF 已生成');
+    const outBlob = pdf.output('blob');
+    const name = `图片转文档-${todayTag()}.pdf`;
+    const how = await deliverBlob(outBlob, name, 'application/pdf');
+    if (how === 'shared') toast('已发送，本地未留文件');
+    else if (how === 'cancelled') toast('已取消，未保存任何文件');
+    else toast('已保存到下载目录');
   } catch (err) {
     toast('生成 PDF 失败：' + (err && err.message ? err.message : '未知错误'));
   } finally {
@@ -344,8 +348,11 @@ async function exportWord() {
     });
 
     const blob = await D.Packer.toBlob(doc);
-    downloadBlob(blob, `图片转文档-${todayTag()}.docx`);
-    toast('Word 已生成');
+    const name = `图片转文档-${todayTag()}.docx`;
+    const how = await deliverBlob(blob, name, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    if (how === 'shared') toast('已发送，本地未留文件');
+    else if (how === 'cancelled') toast('已取消，未保存任何文件');
+    else toast('已保存到下载目录');
   } catch (err) {
     toast('生成 Word 失败：' + (err && err.message ? err.message : '未知错误'));
   } finally {
@@ -364,6 +371,26 @@ function downloadBlob(blob, filename) {
     a.remove();
     URL.revokeObjectURL(url);
   }, 1200);
+}
+
+/* 交付方式：触屏且支持文件分享时，直接交给系统分享面板，不落地；
+   否则回退为下载。返回 shared / downloaded / cancelled。 */
+async function deliverBlob(blob, filename, mime) {
+  const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if (touch && navigator.canShare && typeof File === 'function') {
+    try {
+      const file = new File([blob], filename, { type: mime });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        return 'shared';
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return 'cancelled';
+      /* 其他错误（激活过期、浏览器限制）回退下载 */
+    }
+  }
+  downloadBlob(blob, filename);
+  return 'downloaded';
 }
 
 /* ---------- 事件 ---------- */
