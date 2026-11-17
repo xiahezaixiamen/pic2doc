@@ -91,39 +91,111 @@ function drawToBlob(source, w, h) {
   });
 }
 
+function isPdf(file) {
+  return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+}
+
+function isImage(file) {
+  return file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif)$/i.test(file.name);
+}
+
+function pushItem(name, blob, width, height) {
+  state.items.push({
+    id: ++state.seq,
+    name,
+    blob,
+    width,
+    height,
+    thumb: URL.createObjectURL(blob),
+  });
+}
+
+function canvasToJpeg(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error('页面渲染失败'));
+    }, 'image/jpeg', JPEG_QUALITY);
+  });
+}
+
+/* 把 PDF 每一页渲染成一张 JPEG，按页序加入列表 */
+async function addPdfPages(file, onPage) {
+  const pdfjs = window.pdfjsLib;
+  if (!pdfjs) throw new Error('PDF 组件未加载');
+  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+    pdfjs.GlobalWorkerOptions.workerSrc = 'lib/pdf.worker.min.js';
+  }
+  const data = await file.arrayBuffer();
+  const doc = await pdfjs.getDocument({ data }).promise;
+  try {
+    for (let i = 1; i <= doc.numPages; i++) {
+      if (onPage) onPage(i, doc.numPages);
+      const page = await doc.getPage(i);
+      const base = page.getViewport({ scale: 1 });
+      const scale = Math.min(2.5, MAX_EDGE / Math.max(base.width, base.height));
+      const vp = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(vp.width));
+      canvas.height = Math.max(1, Math.round(vp.height));
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const blob = await canvasToJpeg(canvas);
+      pushItem(`${file.name} 第${i}页`, blob, canvas.width, canvas.height);
+      page.cleanup();
+      canvas.width = canvas.height = 0;
+    }
+  } finally {
+    await doc.destroy();
+  }
+}
+
 async function addFiles(files) {
-  const list = Array.from(files || []).filter((f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif)$/i.test(f.name));
-  if (!list.length) {
-    toast('没有可用的图片文件');
+  const all = Array.from(files || []);
+  const targets = all.filter((f) => isPdf(f) || isImage(f));
+  if (!targets.length) {
+    toast('没有可用的图片或 PDF 文件');
     return;
   }
-  setLoading(true, `正在读取 0/${list.length}`);
+
+  setLoading(true, `正在读取 0/${targets.length}`);
   let failed = 0;
-  for (let i = 0; i < list.length; i++) {
-    setLoading(true, `正在读取 ${i + 1}/${list.length}`);
-    const file = list[i];
+  let firstErr = '';
+
+  for (let i = 0; i < targets.length; i++) {
+    const file = targets[i];
+    setLoading(true, `正在读取 ${i + 1}/${targets.length}`);
     try {
-      const src = await decodeImage(file);
-      const w = src.width || src.naturalWidth;
-      const h = src.height || src.naturalHeight;
-      if (!w || !h) throw new Error('图片尺寸异常');
-      const { blob, width, height } = await drawToBlob(src, w, h);
-      if (src.close) src.close();
-      state.items.push({
-        id: ++state.seq,
-        name: file.name,
-        blob,
-        width,
-        height,
-        thumb: URL.createObjectURL(blob),
-      });
+      if (isPdf(file)) {
+        await addPdfPages(file, (page, total) => {
+          setLoading(true, `正在拆分 PDF 第 ${page}/${total} 页`);
+        });
+      } else {
+        const src = await decodeImage(file);
+        const w = src.width || src.naturalWidth;
+        const h = src.height || src.naturalHeight;
+        if (!w || !h) throw new Error('图片尺寸异常');
+        const { blob, width, height } = await drawToBlob(src, w, h);
+        if (src.close) src.close();
+        pushItem(file.name, blob, width, height);
+      }
     } catch (err) {
       failed++;
+      if (!firstErr) firstErr = err && err.message ? err.message : '';
     }
   }
+
   setLoading(false);
   render();
-  if (failed) toast(`${failed} 张图片读取失败，可能是 HEIC 等不支持的格式`);
+
+  const n = state.items.length;
+  if (failed) {
+    toast(`${failed} 个文件读取失败${firstErr ? '：' + firstErr : ''}`, 3200);
+  } else if (n) {
+    toast(`已导入，共 ${n} 页`);
+  }
 }
 
 /* ---------- 渲染 ---------- */

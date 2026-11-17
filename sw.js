@@ -1,4 +1,4 @@
-const CACHE = 'pic2doc-v2';
+const CACHE = 'pic2doc-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const ASSETS = [
   './manifest.webmanifest',
   './lib/jspdf.umd.min.js',
   './lib/docx.iife.js',
+  './lib/pdf.min.js',
+  './lib/pdf.worker.min.js',
   './icon.svg',
   './icon-192.png',
   './icon-512.png',

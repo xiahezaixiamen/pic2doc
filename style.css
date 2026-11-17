@@ -64,8 +64,8 @@ main{max-width:720px;margin:0 auto;padding:16px}
 @media(min-width:560px){.grid{grid-template-columns:repeat(4,1fr)}}
 
 .card{background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.06),0 0 0 1px rgba(16,24,40,.04)}
-.thumb{position:relative;aspect-ratio:1/1;background:#eef0f4}
-.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb{position:relative;aspect-ratio:1/1;background:#eef0f4;padding:30px 8px 8px}
+.thumb img{width:100%;height:100%;object-fit:contain;display:block}
 .no{
   position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;
   display:flex;align-items:center;justify-content:center;
