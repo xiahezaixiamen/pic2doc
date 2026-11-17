@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>图片转文档</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <h1>图片转文档</h1>
+      <p class="sub">按顺序转成 PDF 或 Word</p>
+    </div>
+    <button id="addTop" class="btn ghost small">添加图片</button>
+  </div>
+</header>
+
+<main>
+  <section id="empty" class="empty" role="button" tabindex="0">
+    <svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true">
+      <rect x="6" y="9" width="36" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="2.2"/>
+      <circle cx="16" cy="19" r="3.2" fill="none" stroke="currentColor" stroke-width="2.2"/>
+      <path d="M10 33l9-9 7 7 5-4 7 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <p class="empty-title">点击这里添加图片</p>
+    <p class="empty-sub">支持一次选多张，全部在本地处理</p>
+  </section>
+
+  <section id="listWrap" class="list-wrap" hidden>
+    <div class="list-head">
+      <span id="count" class="count"></span>
+      <button id="clearAll" class="link">清空</button>
+    </div>
+    <div id="grid" class="grid"></div>
+    <p class="tip">用 ↑ ↓ 调整顺序，卡片左上角数字就是文档里的页序</p>
+  </section>
+
+  <section class="options">
+    <label class="switch-row">
+      <span>
+        <strong>Word 每张图片单独一页</strong>
+        <em>关闭后图片会连续排在同一页里</em>
+      </span>
+      <input type="checkbox" id="onePage" checked>
+    </label>
+  </section>
+
+  <p class="privacy">图片不会上传到任何服务器，全部在你的设备上处理。</p>
+</main>
+
+<footer class="actionbar">
+  <button id="pdfBtn" class="btn primary" disabled>导出 PDF</button>
+  <button id="wordBtn" class="btn primary" disabled>导出 Word</button>
+</footer>
+
+<div id="loading" class="loading" hidden>
+  <div class="spinner"></div>
+  <p id="loadingText">处理中…</p>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<input type="file" id="fileInput" accept="image/*" multiple hidden>
+
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="lib/docx.iife.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
