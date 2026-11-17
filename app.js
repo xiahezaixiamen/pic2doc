@@ -38,6 +38,12 @@ function todayTag() {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
 }
 
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 /* ---------- 读取图片 ---------- */
 
 function decodeImage(file) {
@@ -55,7 +61,10 @@ function decodeImage(file) {
 function decodeFallback(file, resolve, reject) {
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.onload = () => { resolve(img); };
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    resolve(img);
+  };
   img.onerror = () => {
     URL.revokeObjectURL(url);
     reject(new Error('浏览器无法识别这种图片格式'));
@@ -126,7 +135,7 @@ function render() {
   listWrap.hidden = empty;
   pdfBtn.disabled = empty;
   wordBtn.disabled = empty;
-  countEl.textContent = empty ? '' : `共 ${n} 张`;
+  countEl.textContent = empty ? '' : `共 ${n} 张 · 占用 ${formatSize(state.items.reduce((s, it) => s + it.blob.size, 0))}`;
 
   gridEl.innerHTML = '';
   state.items.forEach((it, idx) => {
@@ -309,13 +318,38 @@ gridEl.addEventListener('click', (e) => {
   else if (btn.dataset.act === 'down') moveItem(id, 1);
 });
 
-$('clearAll').addEventListener('click', () => {
-  if (!state.items.length) return;
-  if (!confirm('确定清空全部图片？')) return;
+function releaseAll() {
   state.items.forEach((it) => URL.revokeObjectURL(it.thumb));
   state.items = [];
+}
+
+const clearBtn = $('clearAll');
+let clearArmed = 0;
+
+clearBtn.addEventListener('click', () => {
+  if (!state.items.length) return;
+  if (Date.now() > clearArmed) {
+    clearArmed = Date.now() + 3000;
+    clearBtn.textContent = '再点一次清空';
+    clearBtn.classList.add('danger');
+    setTimeout(() => {
+      if (Date.now() >= clearArmed) {
+        clearArmed = 0;
+        clearBtn.textContent = '清理全部';
+        clearBtn.classList.remove('danger');
+      }
+    }, 3000);
+    return;
+  }
+  clearArmed = 0;
+  clearBtn.textContent = '清理全部';
+  clearBtn.classList.remove('danger');
+  releaseAll();
   render();
+  toast('已清理，占用已释放');
 });
+
+window.addEventListener('pagehide', releaseAll);
 
 pdfBtn.addEventListener('click', exportPdf);
 wordBtn.addEventListener('click', exportWord);

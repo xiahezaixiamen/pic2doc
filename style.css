@@ -43,6 +43,7 @@ main{max-width:720px;margin:0 auto;padding:16px}
 .btn.small{padding:8px 14px;font-size:13.5px;border-radius:10px}
 
 .link{background:none;border:none;color:var(--brand);font-family:inherit;font-size:14px;padding:6px 4px;cursor:pointer}
+.link.danger{color:var(--danger);font-weight:600}
 
 /* empty state */
 .empty{
