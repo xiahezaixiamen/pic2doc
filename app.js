@@ -478,15 +478,6 @@ document.addEventListener('drop', (e) => {
 
 render();
 
-if (isWeChat()) {
-  const tip = $('wxTip');
-  const close = $('wxTipClose');
-  if (tip) {
-    tip.hidden = false;
-    if (close) close.addEventListener('click', () => { tip.hidden = true; });
-  }
-}
-
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});

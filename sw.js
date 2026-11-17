@@ -1,4 +1,4 @@
-const CACHE = 'pic2doc-v5';
+const CACHE = 'pic2doc-v6';
 const ASSETS = [
   './',
   './index.html',
