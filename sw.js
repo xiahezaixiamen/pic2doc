@@ -1,4 +1,4 @@
-const CACHE = 'pic2doc-v1';
+const CACHE = 'pic2doc-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -7,12 +7,23 @@ const ASSETS = [
   './manifest.webmanifest',
   './lib/jspdf.umd.min.js',
   './lib/docx.iife.js',
+  './icon.svg',
   './icon-192.png',
   './icon-512.png',
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then((c) =>
+      Promise.all(
+        ASSETS.map((url) =>
+          fetch(url, { cache: 'reload' }).then((res) => {
+            if (res.ok) return c.put(url, res);
+          }).catch(() => {})
+        )
+      )
+    ).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
