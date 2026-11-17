@@ -107,6 +107,16 @@ main{max-width:720px;margin:0 auto;padding:16px}
 
 .privacy{margin:14px 4px 0;font-size:12px;color:#98a2b3;text-align:center;line-height:1.6}
 
+.wxtip{
+  display:flex;gap:10px;align-items:flex-start;
+  background:#fff8e8;border:1px solid #ffe1a8;color:#8a5a00;
+  font-size:13px;line-height:1.55;padding:10px 12px;border-radius:12px;margin-bottom:14px;
+}
+.wxtip button{
+  flex:0 0 auto;background:none;border:none;color:#8a5a00;font-size:19px;line-height:1;
+  padding:0 2px;cursor:pointer;margin:-2px 0 0 auto;
+}
+
 /* action bar */
 .actionbar{
   position:fixed;left:0;right:0;bottom:0;z-index:30;

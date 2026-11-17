@@ -293,6 +293,7 @@ async function exportPdf() {
     const how = await deliverBlob(outBlob, name, 'application/pdf');
     if (how === 'shared') toast('已发送，本地未留文件');
     else if (how === 'cancelled') toast('已取消，未保存任何文件');
+    else if (how === 'wechat-ios') toast('已生成。若没弹出保存，请点右上角「…」→ 在浏览器中打开', 5200);
     else toast('已保存到下载目录');
   } catch (err) {
     toast('生成 PDF 失败：' + (err && err.message ? err.message : '未知错误'));
@@ -352,6 +353,7 @@ async function exportWord() {
     const how = await deliverBlob(blob, name, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     if (how === 'shared') toast('已发送，本地未留文件');
     else if (how === 'cancelled') toast('已取消，未保存任何文件');
+    else if (how === 'wechat-ios') toast('已生成。若没弹出保存，请点右上角「…」→ 在浏览器中打开', 5200);
     else toast('已保存到下载目录');
   } catch (err) {
     toast('生成 Word 失败：' + (err && err.message ? err.message : '未知错误'));
@@ -373,11 +375,23 @@ function downloadBlob(blob, filename) {
   }, 1200);
 }
 
+function isWeChat() {
+  return /MicroMessenger/i.test(navigator.userAgent);
+}
+
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 /* 交付方式：触屏且支持文件分享时，直接交给系统分享面板，不落地；
-   否则回退为下载。返回 shared / downloaded / cancelled。 */
+   否则回退为下载。返回 shared / downloaded / cancelled / wechat-ios。
+   微信内置浏览器会接管 Web Share，弹出的是微信转发面板而非系统面板，
+   存不了文件，所以在微信里一律走下载。 */
 async function deliverBlob(blob, filename, mime) {
   const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-  if (touch && navigator.canShare && typeof File === 'function') {
+  const wx = isWeChat();
+  if (!wx && touch && navigator.canShare && typeof File === 'function') {
     try {
       const file = new File([blob], filename, { type: mime });
       if (navigator.canShare({ files: [file] })) {
@@ -390,7 +404,8 @@ async function deliverBlob(blob, filename, mime) {
     }
   }
   downloadBlob(blob, filename);
-  return 'downloaded';
+  /* iOS 微信内置浏览器不支持下载，静默失败，需要引导用户去外部浏览器 */
+  return wx && isIOS() ? 'wechat-ios' : 'downloaded';
 }
 
 /* ---------- 事件 ---------- */
@@ -462,6 +477,15 @@ document.addEventListener('drop', (e) => {
 });
 
 render();
+
+if (isWeChat()) {
+  const tip = $('wxTip');
+  const close = $('wxTipClose');
+  if (tip) {
+    tip.hidden = false;
+    if (close) close.addEventListener('click', () => { tip.hidden = true; });
+  }
+}
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
