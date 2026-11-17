@@ -1,5 +1,7 @@
 # 图片转文档
 
+**线上地址：https://xiahezaixiamen.github.io/pic2doc/**
+
 手机端小工具：把多张图片按你排好的顺序，导出成 PDF 或 Word。
 所有处理都在浏览器本地完成，图片不会上传到任何服务器。
 
@@ -26,7 +28,17 @@ python -m http.server 8080
 
 ## 部署
 
-整个目录就是纯静态站点，直接丢到任意静态托管即可（Cloudflare Pages、Vercel、GitHub Pages、对象存储等），无需后端。
+整个目录就是纯静态站点，已部署在 GitHub Pages（仓库 [xiahezaixiamen/pic2doc](https://github.com/xiahezaixiamen/pic2doc)，`main` 分支根目录）。
+
+更新流程：
+
+```
+git add -A && git commit -m "说明" && git push
+```
+
+推送后 GitHub Pages 会自动重新构建，约 1 分钟后生效。
+
+也可以丢到任意其他静态托管（Cloudflare Pages、Vercel、对象存储等），无需后端。
 支持加到手机主屏幕（PWA），离线也能用。
 
 ## 文件说明
